@@ -1500,3 +1500,800 @@ By following this guide, you have successfully deployed your project on an AWS E
    - Cloning your repository.
    - Configuring environment variables.
    - Building and running Docker containers.
+
+Certainly! Below is a comprehensive section for your `README.md` file titled **GitHub Actions**, which includes two subsections: **CI** and **CD**. The **CI** subsection incorporates the pipeline you provided, along with explanations on how to set it up. The **CD** subsection outlines the Continuous Deployment process, leveraging the deployment script and GitHub Actions workflow we discussed earlier.
+
+---
+
+## GitHub Actions
+
+GitHub Actions automates your software workflows, enabling continuous integration (CI) and continuous deployment (CD). This project utilizes GitHub Actions to ensure code quality through automated testing and to deploy the application seamlessly to AWS EC2.
+
+### CI (Continuous Integration)
+
+The Continuous Integration (CI) pipeline is designed to automatically test your code whenever a pull request is made to the `main` branch. This ensures that new changes do not break existing functionality and adhere to code quality standards.
+
+#### CI Pipeline Overview
+
+The CI pipeline performs the following tasks:
+
+1. **Checkout Code**: Retrieves the latest code from the repository.
+2. **Set Up Python**: Configures the Python environment.
+3. **Install Dependencies**: Installs project dependencies using Poetry.
+4. **Run flake8**: Checks the code for style and syntax errors.
+5. **Run Tests**: Executes integration tests for different components of the application.
+
+#### CI Pipeline Configuration
+
+Below is the YAML configuration for the CI pipeline. This file should be placed in the `.github/workflows/` directory of your repository.
+
+```yaml
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  test-accounts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run flake8
+        run: |
+          poetry run flake8 src
+
+      - name: Run accounts tests
+        run: |
+          poetry run pytest src/tests/test_integration/test_accounts.py
+
+  test-movies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run flake8
+        run: |
+          poetry run flake8 src
+
+      - name: Run movies tests
+        run: |
+          poetry run pytest src/tests/test_integration/test_movies.py
+
+  test-profiles:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run flake8
+        run: |
+          poetry run flake8 src
+
+      - name: Run profiles tests
+        run: |
+          poetry run pytest src/tests/test_integration/test_profiles.py
+
+  test-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start Docker Compose and wait for completion
+        run: |
+          docker compose -f docker-compose-tests.yml up --build --abort-on-container-exit --exit-code-from web
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f docker-compose-tests.yml down
+```
+
+#### Understanding the CI Pipeline YAML Configuration
+
+Let's break down the YAML configuration to understand each part and its purpose.
+
+##### 1. `name: CI Pipeline`
+
+- **Purpose**: Assigns a name to the workflow, making it easily identifiable in the GitHub Actions interface.
+
+##### 2. `on:`
+
+- **Purpose**: Specifies the events that trigger the workflow.
+
+  ```yaml
+  on:
+    pull_request:
+      branches:
+        - "main"
+  ```
+
+  - **`pull_request`**: Triggers the workflow when a pull request is created or updated.
+  - **`branches`**: Specifies that the workflow should only run for pull requests targeting the `main` branch.
+
+##### 3. `jobs:`
+
+- **Purpose**: Defines a set of tasks (jobs) that the workflow will execute.
+
+  ```yaml
+  jobs:
+    test-accounts:
+      ...
+    test-movies:
+      ...
+    test-profiles:
+      ...
+    test-e2e:
+      ...
+  ```
+
+  Each job represents a distinct set of steps to perform specific tests or tasks.
+
+##### 4. Individual Jobs (`test-accounts`, `test-movies`, `test-profiles`, `test-e2e`)
+
+Each job follows a similar structure. Let's examine one in detail.
+
+###### Example: `test-accounts`
+
+```yaml
+test-accounts:
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install
+
+    - name: Run flake8
+      run: |
+        poetry run flake8 src
+
+    - name: Run accounts tests
+      run: |
+        poetry run pytest src/tests/test_integration/test_accounts.py
+```
+
+##### **a. `runs-on: ubuntu-latest`**
+
+- **Purpose**: Specifies the type of virtual machine to run the job on. Here, it uses the latest version of Ubuntu.
+
+##### **b. `steps:`**
+
+- **Purpose**: Lists the sequence of tasks that the job will execute.
+
+###### **Step-by-Step Breakdown**
+
+1. **Checkout Code**
+
+    ```yaml
+    - name: Checkout code
+      uses: actions/checkout@v3
+    ```
+
+    - **`name`**: A descriptive name for the step.
+    - **`uses`**: Specifies an action to use. Here, it uses the `checkout` action to clone your repository into the runner.
+
+2. **Set Up Python**
+
+    ```yaml
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    ```
+
+    - **`uses`**: Utilizes the `setup-python` action to install a specific Python version.
+    - **`with`**: Provides inputs to the action. Here, it sets up Python version 3.10.
+
+3. **Install Dependencies**
+
+    ```yaml
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install
+    ```
+
+    - **`run`**: Executes shell commands.
+    - **Commands**:
+      - **`python -m pip install --upgrade pip`**: Upgrades `pip` to the latest version.
+      - **`pip install poetry`**: Installs Poetry, a dependency management tool.
+      - **`poetry install`**: Installs project dependencies as defined in `pyproject.toml`.
+
+4. **Run flake8**
+
+    ```yaml
+    - name: Run flake8
+      run: |
+        poetry run flake8 src
+    ```
+
+    - **Purpose**: Runs `flake8` to analyze code for style and syntax errors.
+    - **`poetry run flake8 src`**: Executes `flake8` within the Poetry-managed virtual environment, targeting the `src` directory.
+
+5. **Run Accounts Tests**
+
+    ```yaml
+    - name: Run accounts tests
+      run: |
+        poetry run pytest src/tests/test_integration/test_accounts.py
+    ```
+
+    - **Purpose**: Executes integration tests for the `accounts` component.
+    - **`poetry run pytest src/tests/test_integration/test_accounts.py`**: Runs the specified test file using `pytest` within the Poetry environment.
+
+##### 5. Repeating Jobs for Different Components
+
+The jobs `test-movies` and `test-profiles` follow the same structure as `test-accounts`, but they target different components of the application:
+
+- **`test-movies`**: Runs integration tests for the `movies` component.
+- **`test-profiles`**: Runs integration tests for the `profiles` component.
+
+This modular approach ensures that each component is tested independently, allowing for easier identification of issues.
+
+##### 6. End-to-End Testing (`test-e2e`)
+
+```yaml
+test-e2e:
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Start Docker Compose and wait for completion
+      run: |
+        docker compose -f docker-compose-tests.yml up --build --abort-on-container-exit --exit-code-from web
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f docker-compose-tests.yml down
+```
+
+- **Purpose**: Performs end-to-end (E2E) testing to ensure that all components of the application work together as expected.
+
+###### **Step-by-Step Breakdown**
+
+1. **Checkout Code**
+
+    - Similar to previous jobs, clones the repository.
+
+2. **Start Docker Compose and Wait for Completion**
+
+    ```yaml
+    - name: Start Docker Compose and wait for completion
+      run: |
+        docker compose -f docker-compose-tests.yml up --build --abort-on-container-exit --exit-code-from web
+    ```
+
+    - **Purpose**: Builds and starts the Docker containers defined in `docker-compose-tests.yml` for testing purposes.
+    - **Commands**:
+      - **`docker compose -f docker-compose-tests.yml up --build`**: Builds and starts the containers.
+      - **`--abort-on-container-exit`**: Stops all containers if any container exits.
+      - **`--exit-code-from web`**: Sets the exit code of the `web` service as the exit code for the entire command, allowing the workflow to fail if the `web` service fails.
+
+3. **Cleanup**
+
+    ```yaml
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f docker-compose-tests.yml down
+    ```
+
+    - **Purpose**: Shuts down and removes the Docker containers, networks, and volumes created for testing.
+    - **`if: always()`**: Ensures that the cleanup step runs regardless of whether the previous steps succeeded or failed. This is crucial for maintaining a clean environment.
+
+#### Adding the CI Pipeline to Your Repository
+
+1. **Create Workflow Directory**:
+
+   Ensure that the `.github/workflows/` directory exists in the root of your repository. If not, create it:
+
+   ```bash
+   mkdir -p .github/workflows
+   ```
+
+2. **Add the CI Workflow File**:
+
+   Create a file named `ci-pipeline.yml` inside `.github/workflows/` and paste the CI pipeline YAML configuration provided above.
+
+   ```bash
+   touch .github/workflows/ci-pipeline.yml
+   ```
+
+3. **Commit and Push**:
+
+   Commit the new workflow file and push it to the `main` branch.
+
+   ```bash
+   git add .github/workflows/ci-pipeline.yml
+   git commit -m "Add CI Pipeline for automated testing"
+   git push origin main
+   ```
+
+4. **Triggering the CI Pipeline**:
+
+   The CI pipeline will automatically run whenever a pull request is opened or updated against the `main` branch. You can monitor the progress and results in the **Actions** tab of your GitHub repository.
+
+---
+
+### CD (Continuous Deployment)
+
+The Continuous Deployment (CD) pipeline automates the deployment of your application to AWS EC2 instances after successful tests. This ensures that your latest changes are reflected in the production environment without manual intervention.
+
+#### CD Pipeline Overview
+
+The CD pipeline performs the following tasks:
+
+1. **Checkout Code**: Retrieves the latest code from the repository.
+2. **Set Up SSH Agent**: Configures SSH for secure access to the EC2 instance.
+3. **Add EC2 Host to known_hosts**: Adds the EC2 host to known SSH hosts to prevent authenticity prompts.
+4. **Execute Deployment Script on EC2**: Connects to the EC2 instance and runs the `deploy.sh` script to update the application.
+
+#### CD Pipeline Configuration
+
+Below is the YAML configuration for the CD pipeline. This file should be placed in the `.github/workflows/` directory of your repository.
+
+```yaml
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH Agent
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Add EC2 Host to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Execute Deployment Script on EC2
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+                'bash /home/ubuntu/path/to/your/project/commands/deploy.sh'
+```
+
+#### Understanding the CD Pipeline YAML Configuration
+
+Let's break down the YAML configuration to understand each part and its purpose.
+
+##### 1. `name: Deploy to AWS EC2`
+
+- **Purpose**: Assigns a name to the workflow, making it easily identifiable in the GitHub Actions interface.
+
+##### 2. `on:`
+
+- **Purpose**: Specifies the events that trigger the workflow.
+
+  ```yaml
+  on:
+    push:
+      branches:
+        - main
+    pull_request:
+      types: [closed]
+      branches:
+        - main
+  ```
+
+  - **`push`**: Triggers the workflow when changes are pushed to the `main` branch.
+  - **`pull_request`**: Triggers the workflow when a pull request targeting the `main` branch is closed (typically when merged).
+
+##### 3. `jobs:`
+
+- **Purpose**: Defines a set of tasks (jobs) that the workflow will execute.
+
+  ```yaml
+  jobs:
+    deploy:
+      ...
+  ```
+
+  In this case, there is a single job named `deploy`.
+
+##### 4. `deploy` Job
+
+```yaml
+deploy:
+  if: github.event.pull_request.merged == true || github.event_name == 'push'
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up SSH Agent
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Add EC2 Host to known_hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Execute Deployment Script on EC2
+      run: |
+        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              'bash /home/ubuntu/path/to/your/project/commands/deploy.sh'
+```
+
+##### **a. `if:`**
+
+- **Purpose**: Sets a condition for when the job should run.
+  
+  ```yaml
+  if: github.event.pull_request.merged == true || github.event_name == 'push'
+  ```
+
+  - **`github.event.pull_request.merged == true`**: Ensures the job runs only if a pull request was merged.
+  - **`github.event_name == 'push'`**: Ensures the job runs on direct pushes to the `main` branch.
+
+##### **b. `runs-on: ubuntu-latest`**
+
+- **Purpose**: Specifies the type of virtual machine to run the job on. Here, it uses the latest version of Ubuntu.
+
+##### **c. `steps:`**
+
+- **Purpose**: Lists the sequence of tasks that the job will execute.
+
+###### **Step-by-Step Breakdown**
+
+1. **Checkout Repository**
+
+    ```yaml
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    ```
+
+    - **`name`**: A descriptive name for the step.
+    - **`uses`**: Specifies an action to use. Here, it uses the `checkout` action to clone your repository into the runner.
+
+2. **Set Up SSH Agent**
+
+    ```yaml
+    - name: Set up SSH Agent
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+    ```
+
+    - **Purpose**: Configures SSH for secure access to the EC2 instance.
+    - **`uses`**: Utilizes the `ssh-agent` action to handle SSH authentication.
+    - **`with`**: Provides inputs to the action.
+      - **`ssh-private-key`**: References the SSH private key stored in GitHub Secrets (`EC2_SSH_KEY`).
+
+3. **Add EC2 Host to `known_hosts`**
+
+    ```yaml
+    - name: Add EC2 Host to known_hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+    ```
+
+    - **Purpose**: Adds the EC2 host to the list of known SSH hosts to prevent authenticity prompts during SSH connections.
+    - **Commands**:
+      - **`ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts`**: Scans the EC2 host's SSH keys and appends them to the `known_hosts` file.
+
+4. **Execute Deployment Script on EC2**
+
+    ```yaml
+    - name: Execute Deployment Script on EC2
+      run: |
+        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              'bash /home/ubuntu/path/to/your/project/commands/deploy.sh'
+    ```
+
+    - **Purpose**: Connects to the EC2 instance via SSH and executes the `deploy.sh` script to update the application.
+    - **Commands**:
+      - **`ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}`**: Initiates an SSH connection using the username and host specified in GitHub Secrets.
+      - **`'bash /home/ubuntu/path/to/your/project/commands/deploy.sh'`**: Runs the deployment script located on the EC2 instance.
+
+#### Setting Up the CD Pipeline
+
+To set up the CD pipeline, follow these steps:
+
+1. **Create Workflow Directory**:
+
+   Ensure that the `.github/workflows/` directory exists in the root of your repository. If not, create it:
+
+   ```bash
+   mkdir -p .github/workflows
+   ```
+
+2. **Add the CD Workflow File**:
+
+   Create a file named `cd-pipeline.yml` inside `.github/workflows/` and paste the CD pipeline YAML configuration provided above.
+
+   ```bash
+   touch .github/workflows/cd-pipeline.yml
+   ```
+
+3. **Configure GitHub Secrets**:
+
+   For the CD pipeline to securely access your EC2 instance, you need to add the following secrets to your GitHub repository:
+
+   - **`EC2_SSH_KEY`**: Your private SSH key for accessing the EC2 instance.
+   - **`EC2_HOST`**: The public DNS or IP address of your EC2 instance.
+   - **`EC2_USER`**: The SSH username for your EC2 instance (e.g., `ubuntu`).
+
+   **How to Add Secrets:**
+
+   - Navigate to your GitHub repository.
+   - Click on **Settings** > **Secrets and variables** > **Actions**.
+   - Click on **New repository secret**.
+   - Add each secret with its respective name and value.
+
+4. **Commit and Push**:
+
+   Commit the new workflow file and push it to the `main` branch.
+
+   ```bash
+   git add .github/workflows/cd-pipeline.yml
+   git commit -m "Add CD Pipeline for automated deployment"
+   git push origin main
+   ```
+
+5. **Triggering the CD Pipeline**:
+
+   The CD pipeline will automatically run under the following conditions:
+
+   - **Push to `main` branch**: When changes are pushed directly to the `main` branch.
+   - **Merged Pull Request**: When a pull request is merged into the `main` branch.
+
+   Additionally, you can manually trigger the deployment:
+
+   - Navigate to the **Actions** tab in your GitHub repository.
+   - Select the **Deploy to AWS EC2** workflow.
+   - Click on the **Run workflow** button.
+
+#### Ensuring Compatibility and Smooth Execution
+
+To ensure that your CD pipeline runs without issues, follow these additional steps:
+
+##### 1. **Update Docker to Version 2**
+
+Ensure that Docker Compose is updated to version 2 on your EC2 instance. Docker Compose v2 is integrated as a plugin in Docker CLI and is recommended for better compatibility and features.
+
+**Steps to Update Docker Compose to Version 2:**
+
+1. **Check Current Docker Compose Version**:
+
+   ```bash
+   docker compose version
+   ```
+
+   **Example Output**:
+
+   ```
+   Docker Compose version v2.32.4
+   ```
+
+   If you encounter issues with Docker Compose commands, proceed with the update steps.
+
+2. **Remove Old Docker Compose Version (if any)**:
+
+   ```bash
+   sudo apt-get remove docker-compose -y
+   ```
+
+3. **Ensure Docker Compose Plugin is Installed**:
+
+   Since you've already installed `docker-compose-plugin`, verify its installation:
+
+   ```bash
+   docker compose version
+   ```
+
+4. **Create Symbolic Link (Optional)**:
+
+   If you prefer using the `docker-compose` command (with a hyphen) instead of `docker compose`, create a symbolic link:
+
+   ```bash
+   sudo ln -s /usr/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+   ```
+
+   **Verify the Link**:
+
+   ```bash
+   docker-compose --version
+   ```
+
+   **Example Output**:
+
+   ```
+   Docker Compose version v2.32.4
+   ```
+
+##### 2. **Install `dos2unix` (If Needed)**
+
+If you encounter issues with line endings in your `deploy.sh` script (common when scripts are edited on Windows), install and apply `dos2unix` to convert the script to Unix format.
+
+**Steps to Install and Use `dos2unix`:**
+
+1. **Install `dos2unix`**:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install dos2unix -y
+   ```
+
+2. **Convert `deploy.sh` to Unix Format**:
+
+   ```bash
+   dos2unix /path/to/your/project/commands/deploy.sh
+   ```
+
+   **Replace `/path/to/your/project/`** with the actual path to your project directory on the EC2 instance.
+
+##### 3. **Configure SSH Keys in GitHub Secrets**
+
+Ensure that your SSH keys are correctly added to GitHub Secrets to allow secure access to your EC2 instance.
+
+- **`EC2_SSH_KEY`**: Should contain the **private** SSH key(copy from `.pem` file). Ensure that this key has the appropriate permissions and access rights to your EC2 instance.
+- **`EC2_HOST`**: The public IP address or DNS of your EC2 instance.
+- **`EC2_USER`**: The SSH username (commonly `ubuntu` for Ubuntu EC2 instances).
+
+##### 4. **Use a Placeholder for Project Directory Path**
+
+In your `deploy.sh` script, replace the hardcoded project directory path (`/home/ubuntu/src/mate-fastapi-homework-5`) with a placeholder to make it adaptable.
+
+**Updated `deploy.sh` Script:**
+
+```bash
+#!/bin/bash
+
+# Exit the script immediately if any command exits with a non-zero status
+set -e
+
+# Function to handle errors with custom messages
+handle_error() {
+    echo "Error: $1"
+    exit 1
+}
+
+# Navigate to the application directory
+cd /home/ubuntu/path/to/your/project || handle_error "Failed to navigate to the application directory."
+
+# Fetch the latest changes from the remote repository
+echo "Fetching the latest changes from the remote repository..."
+git fetch origin main || handle_error "Failed to fetch updates from the 'origin' remote."
+
+# Reset the local repository to match the remote 'main' branch
+echo "Resetting the local repository to match 'origin/main'..."
+git reset --hard origin/main || handle_error "Failed to reset the local repository to 'origin/main'."
+
+# (Optional) Pull any new tags from the remote repository
+echo "Fetching tags from the remote repository..."
+git fetch origin --tags || handle_error "Failed to fetch tags from the 'origin' remote."
+
+# Build and run Docker containers with Docker Compose v2
+docker compose -f docker-compose-prod.yml up -d --build || handle_error "Failed to build and run Docker containers using docker-compose-prod.yml."
+
+# Print a success message upon successful deployment
+echo "Deployment completed successfully."
+```
+
+**Note:** Replace `/home/ubuntu/path/to/your/project` with the actual path to your project directory on the EC2 instance.
+
+#### Updating and Verifying the Deployment Script
+
+1. **Ensure Correct Path in `deploy.sh`:**
+
+   Update the `cd` command in your `deploy.sh` script to reflect the correct project directory path.
+
+   ```bash
+   cd /home/ubuntu/path/to/your/project || handle_error "Failed to navigate to the application directory."
+   ```
+
+2. **Apply `dos2unix` (If Needed):**
+
+   If you haven't already, convert the script to Unix format:
+
+   ```bash
+   dos2unix /home/ubuntu/path/to/your/project/commands/deploy.sh
+   ```
+
+3. **Set Execute Permissions:**
+
+   Ensure that the `deploy.sh` script has execute permissions:
+
+   ```bash
+   chmod +x /home/ubuntu/path/to/your/project/commands/deploy.sh
+   ```
+
+4. **Test the Deployment Script Manually:**
+
+   Before relying on GitHub Actions, execute the script manually on your EC2 instance to ensure it works as expected:
+
+   ```bash
+   bash /home/ubuntu/path/to/your/project/commands/deploy.sh
+   ```
+
+   **Expected Output:**
+
+   ```
+   Fetching the latest changes from the remote repository...
+   Resetting the local repository to match 'origin/main'...
+   Fetching tags from the remote repository...
+   Building and running Docker containers...
+   Deployment completed successfully.
+   ```
+
+#### Finalizing the CD Pipeline
+
+After ensuring that your `deploy.sh` script works correctly and that Docker Compose is updated to version 2, your CD pipeline should function seamlessly. GitHub Actions will handle deploying your application to AWS EC2 whenever changes are pushed to the `main` branch or when a pull request is merged.
+
+---
+
+### Summary
+
+- **CI Pipeline**: Automatically tests code quality and runs integration tests on pull requests to the `main` branch.
+- **CD Pipeline**: Automates the deployment of the application to AWS EC2 upon successful tests, ensuring that the latest changes are live in production.
+
+By leveraging GitHub Actions for both CI and CD, you ensure a robust and automated workflow that maintains high code standards and facilitates smooth deployments.
