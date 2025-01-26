@@ -1500,4 +1500,3 @@ By following this guide, you have successfully deployed your project on an AWS E
    - Cloning your repository.
    - Configuring environment variables.
    - Building and running Docker containers.
-
